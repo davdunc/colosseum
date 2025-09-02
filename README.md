@@ -33,7 +33,6 @@ Colosseum is a multi-agent investment committee framework leveraging Langchain, 
 1. Install dependencies:
    ```
    pip install -r requirements.txt
-   pip install mcp beautifulsoup4 markdownify
    ```
 2. Configure MCP servers in `~/.config/colosseum/mcp.json` or `/etc/colosseum/mcp.json`.
 3. Run the application. Agents will have access to all configured MCP servers and plugins.

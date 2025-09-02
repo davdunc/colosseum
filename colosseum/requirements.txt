@@ -1,0 +1,4 @@
+mcp
+markdownify
+beautifulsoup4
+requests
