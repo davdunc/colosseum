@@ -14,8 +14,9 @@ requests
 # Configuration
 PyYAML
 
-# Kubernetes integration
-kubernetes
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary
 
 # Testing
 pytest>=7.0.0

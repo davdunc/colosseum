@@ -12,7 +12,7 @@ license = {text = "Apache-2.0"}
 authors = [
     {name = "David Duncan", email = "davdunc@gmail.com"}
 ]
-keywords = ["ai", "agents", "mcp", "investment", "langchain", "kubernetes"]
+keywords = ["ai", "agents", "mcp", "investment", "langchain", "podman", "quadlet"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -34,7 +34,9 @@ dependencies = [
     "beautifulsoup4",
     "requests",
     "PyYAML",
-    "kubernetes",
+    # Database
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary",  # PostgreSQL adapter
 ]
 
 [project.optional-dependencies]

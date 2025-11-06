@@ -1,0 +1,7 @@
+# Podman Quadlet Volume for PostgreSQL persistence
+# Place this file in ~/.config/containers/systemd/ or /etc/containers/systemd/
+[Volume]
+VolumeName=colosseum-db-data
+
+[Install]
+WantedBy=default.target
