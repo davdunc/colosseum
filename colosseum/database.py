@@ -52,7 +52,7 @@ class ConversationHistory(Base):
     agent_name = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, nullable=True, default=dict)
+    extra_data = Column(JSON, nullable=True, default=dict)  # Renamed from 'metadata' (reserved keyword)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
 
@@ -171,7 +171,7 @@ def save_conversation(session_id: str, agent_name: str, role: str, content: str,
             agent_name=agent_name,
             role=role,
             content=content,
-            metadata=metadata or {},
+            extra_data=metadata or {},  # Using extra_data column
         )
         session.add(message)
         session.commit()
@@ -206,7 +206,7 @@ def load_conversation_history(session_id: str, limit: Optional[int] = None) -> l
                 "agent_name": msg.agent_name,
                 "role": msg.role,
                 "content": msg.content,
-                "metadata": msg.metadata,
+                "metadata": msg.extra_data,  # Return as 'metadata' for backward compatibility
                 "created_at": msg.created_at.isoformat(),
             }
             for msg in reversed(messages)

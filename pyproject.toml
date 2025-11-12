@@ -49,6 +49,9 @@ dev = [
     "mypy",
 ]
 
+[project.scripts]
+colosseum = "colosseum.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/davdunc/colosseum"
 Repository = "https://github.com/davdunc/colosseum"
