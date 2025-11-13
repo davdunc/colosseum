@@ -69,7 +69,7 @@ class SupervisorAgent:
             The agent's response
         """
         if self.agent is None:
-            raise RuntimeError("No tools registered. Please register at least one tool before running.")
+            raise RuntimeError("No tools registered. Agent requires at least one tool to function. Use register_tool() to add tools before running.")
 
         # Save user message to conversation history
         if self.persist_conversations:
