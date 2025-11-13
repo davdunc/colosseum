@@ -2,7 +2,7 @@
   "fetch": {
     "type": "fetch",
     "base_url": "http://localhost:8080",
-    "api_key": "your-api-key-here"
+    "api_key": "${FETCH_API_KEY}"
   },
   "interactive_brokers": {
     "type": "ib",
