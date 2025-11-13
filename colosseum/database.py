@@ -123,6 +123,9 @@ def save_agent_state(agent_name: str, session_id: str, state_data: dict):
         )
         session.add(state)
         session.commit()
+    except Exception as e:
+        session.rollback()
+        raise RuntimeError(f"Failed to save agent state: {e}") from e
     finally:
         session.close()
 
