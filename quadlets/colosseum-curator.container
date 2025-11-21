@@ -1,0 +1,68 @@
+[Unit]
+Description=Colosseum CuratorAgent - The Keeper of Records
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-postgres.service
+Requires=colosseum-postgres.service
+Wants=network-online.target
+
+[Container]
+# Use pre-built curator image
+# Build with: cd deployment/docker && ./build.sh
+Image=localhost/colosseum-curator:latest
+ContainerName=colosseum-curator
+
+# Auto-pull if missing
+Pull=missing
+
+# Network - connect to same network as PostgreSQL
+Network=colosseum-network.network
+
+# Environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=DB_HOST=colosseum-postgres
+Environment=DB_PORT=5432
+Environment=DB_DATABASE=colosseum_data_lake
+Environment=DB_USER=colosseum
+# Password from podman secret
+Secret=colosseum-db-password,type=env,target=DB_PASSWORD
+
+# Mount configuration
+Volume=%h/.config/colosseum:/etc/colosseum:ro,Z
+
+# Command - start curator with default watchlist
+Exec=python -m colosseum.cli.curator start --interval 60 --tickers AAPL GOOGL MSFT AMZN TSLA NVDA META
+
+# Security
+User=1000
+SecurityLabelDisable=false
+DropCapability=ALL
+NoNewPrivileges=true
+
+# Healthcheck
+HealthCmd=python -m colosseum.cli.curator health
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=40s
+
+# Resource limits
+Memory=1g
+MemorySwap=1g
+CPUShares=512
+CPUQuota=50%
+
+# Auto-updates
+Label=io.containers.autoupdate=registry
+
+# Logging
+LogDriver=journald
+
+[Service]
+# Restart policy
+Restart=always
+RestartSec=15
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
