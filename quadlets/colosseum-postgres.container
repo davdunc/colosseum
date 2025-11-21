@@ -1,0 +1,65 @@
+[Unit]
+Description=PostgreSQL database for Colosseum data lake
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-network.service
+Requires=colosseum-network.service
+Wants=colosseum-postgres-data.service
+
+[Container]
+# Use PostgreSQL 16 with pgvector extension for AI/ML workloads
+Image=docker.io/pgvector/pgvector:pg16
+ContainerName=colosseum-postgres
+
+# Network configuration
+Network=colosseum-network.network
+# Publish port for external access (comment out for internal-only)
+PublishPort=5432:5432
+
+# Volume mounts
+Volume=colosseum-postgres-data.volume:/var/lib/postgresql/data:Z
+
+# Environment variables
+# NOTE: For production, use podman secrets instead
+Environment=POSTGRES_DB=colosseum_data_lake
+Environment=POSTGRES_USER=colosseum
+Environment=POSTGRES_PASSWORD=change_me_in_production
+Environment=PGDATA=/var/lib/postgresql/data/pgdata
+
+# Security options
+# Run as postgres user (UID 999 in the container)
+User=999
+# Read-only root filesystem (except for mounted volumes)
+ReadOnly=false
+# Drop all capabilities except what's needed
+SecurityLabelDisable=false
+
+# Healthcheck
+HealthCmd=/usr/bin/pg_isready -U colosseum -d colosseum_data_lake
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+HealthStartPeriod=30s
+
+# Resource limits
+# Memory limit (adjust based on your needs)
+Memory=2g
+# CPU shares (adjust based on your needs)
+CPUShares=1024
+
+# Automatic updates
+# Label for podman auto-update
+Label=io.containers.autoupdate=registry
+
+# Logging
+LogDriver=journald
+
+[Service]
+# Restart policy
+Restart=always
+RestartSec=10
+# Timeout for start/stop
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

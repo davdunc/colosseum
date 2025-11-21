@@ -2,3 +2,6 @@ mcp
 markdownify
 beautifulsoup4
 requests
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+pyyaml>=6.0

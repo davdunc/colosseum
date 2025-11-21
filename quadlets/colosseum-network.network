@@ -1,0 +1,18 @@
+[Unit]
+Description=Colosseum internal network for services
+Documentation=https://github.com/davdunc/colosseum
+
+[Network]
+# Create an isolated network for colosseum services
+NetworkName=colosseum
+Driver=bridge
+# Enable DNS for container name resolution
+DisableDNS=false
+# Internal network - no external access needed for container-to-container
+Internal=false
+# Subnet for the colosseum network
+Subnet=10.89.0.0/24
+Gateway=10.89.0.1
+
+[Install]
+WantedBy=default.target
