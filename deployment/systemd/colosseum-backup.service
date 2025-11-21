@@ -1,0 +1,21 @@
+[Unit]
+Description=Backup Colosseum PostgreSQL Database
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-postgres.service
+Requires=colosseum-postgres.service
+
+[Service]
+Type=oneshot
+User=colosseum
+Group=colosseum
+
+# Backup script
+ExecStart=/usr/local/bin/colosseum-backup.sh
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=colosseum-backup
+
+[Install]
+WantedBy=multi-user.target

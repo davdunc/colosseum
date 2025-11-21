@@ -187,12 +187,54 @@ colosseum/
 │   ├── init-db.sql                 # Database schema
 │   ├── config.yaml.example         # Configuration template
 │   └── README.md                   # Deployment guide
+├── deployment/
+│   ├── systemd/                    # Systemd service files
+│   ├── kubernetes/                 # Kubernetes manifests
+│   ├── docker/                     # Container images
+│   └── README.md                   # Deployment overview
 ├── examples/
 │   └── curator_example.py          # Example usage
 ├── docs/
-│   └── CURATOR_AGENT.md            # Curator documentation
+│   ├── CURATOR_AGENT.md            # Curator documentation
+│   └── DEPLOYMENT.md               # Deployment guide
 └── README.md
 ```
+
+## Deployment
+
+Colosseum supports multiple deployment strategies:
+
+- **Local Development**: Direct Python execution for testing
+- **Systemd/Quadlet**: Production deployment on Fedora/RHEL ⭐ **Recommended**
+- **Kubernetes**: Containerized deployment for multi-node clusters
+- **Fedora Bootable Container**: Immutable infrastructure for edge
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for comprehensive deployment guide.
+
+### Quick Deploy (Systemd)
+
+```bash
+# Install as system service
+cd deployment/systemd
+sudo ./install.sh
+
+# Enable and start
+sudo systemctl enable --now colosseum-curator.service
+```
+
+### Quick Deploy (Kubernetes)
+
+```bash
+# Build and deploy
+cd deployment/docker && ./build.sh
+cd ../kubernetes && ./deploy.sh
+```
+
+## Documentation
+
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Comprehensive deployment strategies
+- **[CuratorAgent Documentation](docs/CURATOR_AGENT.md)** - Data lake agent details
+- **[Quadlets Guide](quadlets/README.md)** - PostgreSQL deployment
 
 ## References
 

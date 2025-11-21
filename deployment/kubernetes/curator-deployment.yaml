@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: curator-config
+  namespace: colosseum
+data:
+  config.yaml: |
+    database:
+      host: postgres.colosseum.svc.cluster.local
+      port: 5432
+      database: colosseum_data_lake
+      user: colosseum
+      pool_size: 10
+      max_overflow: 20
+
+    agents:
+      curator:
+        enabled: true
+        fetch_interval: 60
+        cache_ttl: 300
+        batch_size: 1000
+
+    logging:
+      level: INFO
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  watchlist.txt: |
+    AAPL
+    GOOGL
+    MSFT
+    AMZN
+    TSLA
+    NVDA
+    META
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curator
+  namespace: colosseum
+  labels:
+    app: curator
+    component: data-lake
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: curator
+  template:
+    metadata:
+      labels:
+        app: curator
+    spec:
+      containers:
+      - name: curator
+        image: ghcr.io/davdunc/colosseum-curator:latest
+        imagePullPolicy: Always
+        command:
+        - python
+        - -m
+        - colosseum.cli.curator
+        - start
+        - --interval
+        - "60"
+        - --tickers
+        - AAPL
+        - GOOGL
+        - MSFT
+        - AMZN
+        - TSLA
+        - NVDA
+        - META
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/colosseum
+          readOnly: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -m
+            - colosseum.cli.curator
+            - health
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -m
+            - colosseum.cli.curator
+            - health
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: curator-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: curator
+  namespace: colosseum
+spec:
+  selector:
+    app: curator
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
