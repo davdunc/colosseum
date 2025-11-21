@@ -1,0 +1,69 @@
+# Colosseum Configuration with S3 Integration
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  database: colosseum_data_lake
+  user: colosseum
+  password: ${DB_PASSWORD}
+  pool_size: 10
+  max_overflow: 20
+
+# S3 Configuration for parquet data import
+s3:
+  sources:
+    # Production data lake
+    prod-datalake:
+      bucket: my-company-market-data
+      region: us-east-1
+      # Use AWS credentials from environment or IAM role
+      # aws_access_key_id: ${AWS_ACCESS_KEY_ID}
+      # aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+
+    # Historical data archive
+    historical:
+      bucket: colosseum-historical-data
+      region: us-west-2
+      aws_access_key_id: ${AWS_ACCESS_KEY_ID}
+      aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+
+    # MinIO local storage (S3-compatible)
+    local-minio:
+      bucket: colosseum-local
+      region: us-east-1
+      endpoint_url: http://localhost:9000
+      aws_access_key_id: minioadmin
+      aws_secret_access_key: minioadmin
+
+    # Backblaze B2 (S3-compatible)
+    b2-storage:
+      bucket: colosseum-backup
+      region: us-west-000
+      endpoint_url: https://s3.us-west-000.backblazeb2.com
+      aws_access_key_id: ${B2_KEY_ID}
+      aws_secret_access_key: ${B2_APPLICATION_KEY}
+
+# MCP Server configuration
+mcp:
+  config_path: ~/.config/colosseum/mcp.json
+
+# Agent configuration
+agents:
+  curator:
+    enabled: true
+    fetch_interval: 60
+    cache_ttl: 300
+    batch_size: 1000
+
+# Logging configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Feature flags
+features:
+  enable_news_sentiment: true
+  enable_vector_search: true
+  enable_auto_backfill: false
+  enable_s3_import: true

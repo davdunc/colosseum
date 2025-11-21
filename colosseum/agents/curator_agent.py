@@ -28,6 +28,14 @@ from ..mcp.base import MCPServer, BrokerMCPServer, NewsMCPServer
 
 logger = logging.getLogger(__name__)
 
+# Lazy import for S3 dependencies (optional)
+try:
+    from ..data_sources.s3_parquet import S3ParquetSource, S3ParquetETL
+    S3_AVAILABLE = True
+except ImportError:
+    S3_AVAILABLE = False
+    logger.warning("S3 parquet support not available (install boto3, pyarrow, pandas)")
+
 
 class CuratorAgent:
     """
@@ -79,6 +87,10 @@ class CuratorAgent:
 
         # Statistics
         self.stats = defaultdict(int)
+
+        # S3 Parquet sources (optional)
+        self.s3_sources: Dict[str, S3ParquetSource] = {}
+        self._init_s3_sources()
 
         logger.info(f"CuratorAgent initialized (session: {self.session_id})")
 
@@ -567,3 +579,170 @@ class CuratorAgent:
             return False
 
         return True
+
+    # =========================================================================
+    # S3 Parquet Import Methods
+    # =========================================================================
+
+    def _init_s3_sources(self):
+        """Initialize S3 parquet sources from configuration."""
+        if not S3_AVAILABLE:
+            return
+
+        s3_config = self.config.get('s3', {}).get('sources', {})
+
+        for name, config in s3_config.items():
+            try:
+                source = S3ParquetSource(
+                    bucket=config['bucket'],
+                    region=config.get('region'),
+                    aws_access_key_id=config.get('aws_access_key_id'),
+                    aws_secret_access_key=config.get('aws_secret_access_key'),
+                    endpoint_url=config.get('endpoint_url'),
+                    config=config
+                )
+                self.s3_sources[name] = source
+                logger.info(f"Initialized S3 source: {name} (bucket: {config['bucket']})")
+            except Exception as e:
+                logger.error(f"Failed to initialize S3 source {name}: {e}")
+
+    def import_from_s3(
+        self,
+        source_name: str,
+        prefix: str = "",
+        data_type: str = "auto",
+        max_files: int = 100
+    ) -> Dict[str, int]:
+        """
+        Import data from S3 parquet files.
+
+        Args:
+            source_name: Name of configured S3 source
+            prefix: S3 key prefix to filter files
+            data_type: Type of data (auto, quotes, ohlcv, news)
+            max_files: Maximum number of files to process
+
+        Returns:
+            Dictionary with import statistics
+        """
+        if not S3_AVAILABLE:
+            logger.error("S3 support not available")
+            return {'error': 'S3 dependencies not installed'}
+
+        if source_name not in self.s3_sources:
+            logger.error(f"S3 source not configured: {source_name}")
+            return {'error': f'Source {source_name} not found'}
+
+        s3_source = self.s3_sources[source_name]
+        etl = S3ParquetETL(s3_source, self.db_client)
+
+        logger.info(f"Starting S3 import: source={source_name}, prefix={prefix}, type={data_type}")
+
+        stats = etl.import_all(prefix=prefix, data_type=data_type)
+
+        logger.info(f"S3 import complete: {stats}")
+        self.stats['s3_imports'] += stats['files_processed']
+        self.stats['s3_import_failures'] += stats['files_failed']
+
+        return stats
+
+    def import_s3_quotes(
+        self,
+        source_name: str,
+        keys: List[str]
+    ) -> int:
+        """
+        Import stock quotes from S3 parquet files.
+
+        Args:
+            source_name: Name of configured S3 source
+            keys: List of S3 keys to import
+
+        Returns:
+            Number of quotes imported
+        """
+        if not S3_AVAILABLE or source_name not in self.s3_sources:
+            return 0
+
+        s3_source = self.s3_sources[source_name]
+        etl = S3ParquetETL(s3_source, self.db_client)
+
+        count = etl.import_quotes(keys)
+        self.stats['s3_quotes_imported'] += count
+
+        return count
+
+    def import_s3_ohlcv(
+        self,
+        source_name: str,
+        keys: List[str]
+    ) -> int:
+        """
+        Import OHLCV bars from S3 parquet files.
+
+        Args:
+            source_name: Name of configured S3 source
+            keys: List of S3 keys to import
+
+        Returns:
+            Number of bars imported
+        """
+        if not S3_AVAILABLE or source_name not in self.s3_sources:
+            return 0
+
+        s3_source = self.s3_sources[source_name]
+        etl = S3ParquetETL(s3_source, self.db_client)
+
+        count = etl.import_ohlcv(keys)
+        self.stats['s3_ohlcv_imported'] += count
+
+        return count
+
+    def import_s3_news(
+        self,
+        source_name: str,
+        keys: List[str]
+    ) -> int:
+        """
+        Import news articles from S3 parquet files.
+
+        Args:
+            source_name: Name of configured S3 source
+            keys: List of S3 keys to import
+
+        Returns:
+            Number of articles imported
+        """
+        if not S3_AVAILABLE or source_name not in self.s3_sources:
+            return 0
+
+        s3_source = self.s3_sources[source_name]
+        etl = S3ParquetETL(s3_source, self.db_client)
+
+        count = etl.import_news(keys)
+        self.stats['s3_news_imported'] += count
+
+        return count
+
+    def list_s3_files(
+        self,
+        source_name: str,
+        prefix: str = "",
+        suffix: str = ".parquet"
+    ) -> List[str]:
+        """
+        List parquet files in S3 bucket.
+
+        Args:
+            source_name: Name of configured S3 source
+            prefix: Key prefix to filter
+            suffix: File suffix
+
+        Returns:
+            List of S3 keys
+        """
+        if not S3_AVAILABLE or source_name not in self.s3_sources:
+            return []
+
+        s3_source = self.s3_sources[source_name]
+        return s3_source.list_files(prefix=prefix, suffix=suffix)

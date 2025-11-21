@@ -199,6 +199,12 @@ def cmd_health(args):
     for name, server in curator.mcp_servers.items():
         print(f"   - {name}: ✅")
 
+    # Check S3 sources
+    if curator.s3_sources:
+        print(f"☁️  S3 Sources:       {len(curator.s3_sources)} configured")
+        for name in curator.s3_sources.keys():
+            print(f"   - {name}: ✅")
+
     # Overall health
     print()
     healthy = curator.health_check()
@@ -208,6 +214,50 @@ def cmd_health(args):
     else:
         print("❌ Curator is unhealthy")
         sys.exit(1)
+
+
+def cmd_s3_list(args):
+    """List S3 parquet files."""
+    curator = CuratorAgent()
+
+    print(f"☁️  Listing S3 files: {args.source}/{args.prefix}")
+    files = curator.list_s3_files(args.source, prefix=args.prefix)
+
+    if files:
+        print(f"\n✅ Found {len(files)} files:\n")
+        for f in files[:args.limit]:
+            print(f"   {f}")
+        if len(files) > args.limit:
+            print(f"\n   ... and {len(files) - args.limit} more")
+    else:
+        print("❌ No files found")
+
+
+def cmd_s3_import(args):
+    """Import from S3 parquet files."""
+    curator = CuratorAgent()
+
+    print(f"☁️  Importing from S3: {args.source}/{args.prefix}")
+    print(f"   Data type: {args.type}")
+    print()
+
+    stats = curator.import_from_s3(
+        args.source,
+        prefix=args.prefix,
+        data_type=args.type
+    )
+
+    if 'error' in stats:
+        print(f"❌ Import failed: {stats['error']}")
+        sys.exit(1)
+
+    print("✅ Import complete!\n")
+    print(f"📊 Statistics:")
+    print(f"   Files processed:  {stats.get('files_processed', 0)}")
+    print(f"   Files failed:     {stats.get('files_failed', 0)}")
+    print(f"   Quotes imported:  {stats.get('quotes', 0)}")
+    print(f"   OHLCV imported:   {stats.get('ohlcv', 0)}")
+    print(f"   News imported:    {stats.get('news', 0)}")
 
 
 def main():
@@ -263,6 +313,18 @@ def main():
     # Health command
     subparsers.add_parser('health', help='Check health')
 
+    # S3 list command
+    s3_list_parser = subparsers.add_parser('s3-list', help='List S3 parquet files')
+    s3_list_parser.add_argument('source', help='S3 source name')
+    s3_list_parser.add_argument('--prefix', default='', help='Key prefix')
+    s3_list_parser.add_argument('--limit', type=int, default=20, help='Max files to show')
+
+    # S3 import command
+    s3_import_parser = subparsers.add_parser('s3-import', help='Import from S3 parquet')
+    s3_import_parser.add_argument('source', help='S3 source name')
+    s3_import_parser.add_argument('--prefix', default='', help='Key prefix')
+    s3_import_parser.add_argument('--type', default='auto', choices=['auto', 'quotes', 'ohlcv', 'news'], help='Data type')
+
     args = parser.parse_args()
 
     if not args.command:
@@ -279,6 +341,8 @@ def main():
         'backfill': cmd_backfill,
         'stats': cmd_stats,
         'health': cmd_health,
+        's3-list': cmd_s3_list,
+        's3-import': cmd_s3_import,
     }
 
     handler = commands.get(args.command)
