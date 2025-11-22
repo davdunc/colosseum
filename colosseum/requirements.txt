@@ -1,4 +1,29 @@
+# Core dependencies
+langchain>=0.1.0
+langchain-openai>=0.0.5
+openai>=1.0.0
+
+# MCP (Model Context Protocol)
 mcp
+
+# Web scraping and content processing
 markdownify
 beautifulsoup4
 requests
+
+# Configuration
+PyYAML
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary
+
+# Testing
+pytest>=7.0.0
+pytest-cov
+pytest-asyncio
+
+# Development
+black
+flake8
+mypy

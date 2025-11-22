@@ -1,0 +1,27 @@
+{
+  "fetch": {
+    "type": "fetch",
+    "base_url": "http://localhost:8080",
+    "api_key": "${FETCH_API_KEY}"
+  },
+  "interactive_brokers": {
+    "type": "ib",
+    "host": "localhost",
+    "port": 7497,
+    "client_id": 1,
+    "account": "your-account-id"
+  },
+  "etrade": {
+    "type": "etrade",
+    "consumer_key": "your-consumer-key",
+    "consumer_secret": "your-consumer-secret",
+    "sandbox": true
+  },
+  "dastrader": {
+    "type": "dastrader",
+    "host": "localhost",
+    "port": 9000,
+    "username": "your-username",
+    "password": "your-password"
+  }
+}

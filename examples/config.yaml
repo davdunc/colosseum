@@ -1,0 +1,56 @@
+# Colosseum Configuration Example
+# Place this file at one of the following locations:
+# - /etc/colosseum/config.yaml (system-wide, requires root)
+# - /var/lib/colosseum/config.yaml (service-specific)
+# - ~/.config/colosseum/config.yaml (user-specific, XDG standard)
+
+# Application settings
+app:
+  name: "colosseum"
+  log_level: "INFO"
+  debug: false
+
+# MCP configuration
+mcp:
+  # Path to MCP server configuration file
+  config_path: "~/.config/colosseum/mcp.json"
+  # Timeout for MCP server connections (seconds)
+  timeout: 30
+  # Retry attempts for failed connections
+  retry_attempts: 3
+
+# Kubernetes settings
+kubernetes:
+  # Use in-cluster config or local kubeconfig
+  in_cluster: false
+  # Namespace for deployments
+  namespace: "default"
+  # Container image for Fedora bootable containers
+  fedora_image: "fedora:latest"
+
+# Agent settings
+agents:
+  # Default LLM temperature
+  temperature: 0
+  # Verbose logging for agents
+  verbose: true
+  # Agent type (zero-shot-react-description, conversational-react-description, etc.)
+  agent_type: "zero-shot-react-description"
+
+# Plugin settings
+plugins:
+  # Directory containing plugins
+  plugin_dir: "./colosseum/plugins"
+  # Auto-load plugins on startup
+  auto_load: true
+  # List of plugins to load (empty means load all)
+  enabled_plugins: []
+
+# OpenAI settings (if using OpenAI as LLM provider)
+openai:
+  # API key (can also use OPENAI_API_KEY environment variable)
+  # api_key: "sk-..."
+  # Model to use
+  model: "gpt-4"
+  # Max tokens for responses
+  max_tokens: 2000

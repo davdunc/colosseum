@@ -1,0 +1,12 @@
+# Podman Quadlet Network Configuration for Colosseum
+# Place this file in ~/.config/containers/systemd/ or /etc/containers/systemd/
+[Network]
+NetworkName=colosseum
+Driver=bridge
+# Enable DNS for service discovery
+DisableDNS=false
+# Internal network can still access host
+Internal=false
+
+[Install]
+WantedBy=default.target

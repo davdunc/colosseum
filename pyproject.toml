@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colosseum"
+version = "0.1.0"
+description = "Multi-Agent Investment Committee Framework with MCP integration"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "David Duncan", email = "davdunc@gmail.com"}
+]
+keywords = ["ai", "agents", "mcp", "investment", "langchain", "podman", "quadlet"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.5",
+    "openai>=1.0.0",
+    "mcp",
+    "markdownify",
+    "beautifulsoup4",
+    "requests",
+    "PyYAML",
+    # Database
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary",  # PostgreSQL adapter
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov",
+    "pytest-asyncio",
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[project.scripts]
+colosseum = "colosseum.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/davdunc/colosseum"
+Repository = "https://github.com/davdunc/colosseum"
+Issues = "https://github.com/davdunc/colosseum/issues"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["colosseum*"]
+exclude = ["tests*", "docs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "colosseum"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=colosseum --cov-report=term-missing"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv"]
