@@ -6,7 +6,7 @@ Get Colosseum running in 10 minutes.
 
 Before you begin, ensure you have:
 
-- **Fedora 39+** or **RHEL 9+** (recommended) or Ubuntu/Debian
+- **Fedora 43+** or **RHEL 10+** (recommended) or Ubuntu/Debian
 - **Podman 4.6+** (or Docker)
 - **Python 3.11+**
 - **Git**

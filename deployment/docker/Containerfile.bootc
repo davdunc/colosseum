@@ -1,6 +1,6 @@
 # Fedora Bootable Container for Colosseum
 # Creates an immutable OS image with Colosseum pre-installed
-FROM quay.io/fedora/fedora-bootc:40
+FROM quay.io/fedora/fedora-bootc:43
 
 LABEL org.opencontainers.image.title="Colosseum Bootable Container"
 LABEL org.opencontainers.image.description="Immutable Colosseum deployment for edge/production"

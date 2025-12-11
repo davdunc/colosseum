@@ -253,7 +253,7 @@ Deploy Colosseum as an immutable Fedora Bootable Container for edge deployments 
 ### Containerfile
 
 ```dockerfile
-FROM quay.io/fedora/fedora-bootc:40
+FROM quay.io/fedora/fedora-bootc:43
 
 # Install dependencies
 RUN dnf install -y \

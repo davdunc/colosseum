@@ -46,7 +46,7 @@ The deployment follows **Major Hayden's approach** to using Quadlets for contain
 
 ## Prerequisites
 
-- **Fedora 39+** (or RHEL 9+)
+- **Fedora 43+** (or RHEL 10+)
 - **Podman 4.6+** with quadlet support
 - **systemd** (user or system mode)
 - **OpenSSL** (for generating secrets)
