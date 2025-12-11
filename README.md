@@ -6,6 +6,39 @@ Colosseum is a multi-agent investment committee framework leveraging Langchain, 
 
 The framework includes a **PostgreSQL data lake** managed by the **CuratorAgent** (the keeper of records) for persistent storage and efficient access to market data, news, and agent decisions.
 
+## ⚡ Quick Start
+
+Get up and running in 10 minutes:
+
+```bash
+# 1. Clone repo
+git clone https://github.com/davdunc/colosseum.git
+cd colosseum
+
+# 2. Install dependencies
+python3 -m venv venv && source venv/bin/activate
+pip install -r colosseum/requirements.txt
+
+# 3. Deploy PostgreSQL data lake
+cd quadlets
+./build-postgres-image.sh  # 5-10 min, first time only
+./deploy-enhanced.sh
+
+# 4. Initialize database
+./init-schema.sh
+
+# 5. Configure
+mkdir -p ~/.config/colosseum
+cp config.yaml.example ~/.config/colosseum/config.yaml
+export DB_PASSWORD=$(podman secret inspect colosseum-db-password --showsecret)
+
+# 6. Run curator
+python -m colosseum.cli.curator health
+python -m colosseum.cli.curator start --interval 60 --tickers AAPL GOOGL MSFT
+```
+
+📖 **See [QUICKSTART.md](QUICKSTART.md) for detailed instructions**
+
 ## MCP Client/Server Integration
 
 - **MCP servers** are defined in a configuration file (e.g., `mcp.json`) and instantiated at runtime.
