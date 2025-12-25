@@ -273,6 +273,8 @@ class CuratorAgent:
 
                 if bars:
                     # Transform and persist
+                    # Transform and persist
+                    transformed_bars = []
                     for bar in bars:
                         bar_data = {
                             'ticker': ticker,
@@ -285,6 +287,7 @@ class CuratorAgent:
                             'adj_close': bar.get('adj_close'),
                             'source': server_name
                         }
+                        transformed_bars.append(bar_data)
 
                     # Batch insert
                     query = """
@@ -301,7 +304,7 @@ class CuratorAgent:
                         volume = EXCLUDED.volume,
                         adj_close = EXCLUDED.adj_close
                     """
-                    self.db_client.execute_many(query, bars)
+                    self.db_client.execute_many(query, transformed_bars)
                     self.stats['historical_bars_fetched'] += len(bars)
 
                     logger.info(f"Fetched {len(bars)} bars for {ticker} from {server_name}")
