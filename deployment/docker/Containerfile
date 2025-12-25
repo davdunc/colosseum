@@ -1,0 +1,51 @@
+# Podman-optimized Containerfile for Colosseum CuratorAgent
+FROM registry.fedoraproject.org/fedora:40
+
+LABEL org.opencontainers.image.title="Colosseum CuratorAgent"
+LABEL org.opencontainers.image.description="The Keeper of Records for the Colosseum Investment Committee"
+LABEL org.opencontainers.image.source="https://github.com/davdunc/colosseum"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Install dependencies
+RUN dnf install -y \
+        python3.11 \
+        python3-pip \
+        postgresql \
+        && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# Create application user
+RUN useradd -r -s /bin/bash -u 1000 colosseum
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements
+COPY colosseum/requirements.txt /app/requirements.txt
+
+# Install Python dependencies
+RUN pip3.11 install --no-cache-dir --upgrade pip && \
+    pip3.11 install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY colosseum/ /app/colosseum/
+COPY examples/ /app/examples/
+
+# Create directories
+RUN mkdir -p /app/logs /app/data && \
+    chown -R colosseum:colosseum /app
+
+# Switch to non-root user
+USER colosseum
+
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3.11 -m colosseum.cli.curator health || exit 1
+
+# Default command
+CMD ["python3.11", "-m", "colosseum.cli.curator", "start", "--interval", "60"]

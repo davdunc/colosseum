@@ -1,0 +1,76 @@
+[Unit]
+Description=PostgreSQL database for Colosseum data lake
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-network.service
+Requires=colosseum-network.service
+Wants=colosseum-postgres-data.service
+
+[Container]
+# Use custom image with TimescaleDB + pgvector
+# Build with: ./build-postgres-image.sh
+Image=localhost/colosseum-postgres:latest
+ContainerName=colosseum-postgres
+
+# Auto-pull image if not present
+Pull=missing
+
+# Network configuration
+Network=colosseum-network.network
+# Publish port for external access (comment out for internal-only)
+PublishPort=5432:5432
+
+# Volume mounts
+Volume=colosseum-postgres-data.volume:/var/lib/postgresql/data:Z
+# Mount custom PostgreSQL configuration
+Volume=%h/colosseum/quadlets/postgresql.conf:/etc/postgresql/postgresql.conf:ro,Z
+
+# Environment variables
+Environment=POSTGRES_DB=colosseum_data_lake
+Environment=POSTGRES_USER=colosseum
+# Password will be set via podman secret by deploy.sh
+Environment=POSTGRES_PASSWORD=change_me_in_production
+Environment=PGDATA=/var/lib/postgresql/data/pgdata
+# Use custom config
+Environment=POSTGRES_CONFIG_FILE=/etc/postgresql/postgresql.conf
+
+# Security options
+User=999
+SecurityLabelDisable=false
+# Drop unnecessary capabilities
+DropCapability=ALL
+AddCapability=CHOWN SETGID SETUID DAC_OVERRIDE
+
+# Healthcheck
+HealthCmd=/usr/bin/pg_isready -U colosseum -d colosseum_data_lake
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+HealthStartPeriod=30s
+
+# Resource limits
+# Adjust based on your system resources
+Memory=2g
+MemorySwap=2g
+CPUShares=1024
+# Limit to 2 CPUs
+CPUQuota=200%
+
+# Automatic updates
+Label=io.containers.autoupdate=registry
+
+# Logging
+LogDriver=journald
+
+[Service]
+# Restart policy
+Restart=always
+RestartSec=10
+# Timeout for start/stop
+TimeoutStartSec=120
+TimeoutStopSec=30
+# Run systemd health checks
+ExecStartPost=/bin/sleep 5
+ExecStartPost=/usr/bin/podman exec colosseum-postgres pg_isready -U colosseum
+
+[Install]
+WantedBy=default.target

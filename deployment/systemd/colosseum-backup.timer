@@ -1,0 +1,17 @@
+[Unit]
+Description=Daily Colosseum Database Backup
+Documentation=https://github.com/davdunc/colosseum
+
+[Timer]
+# Run daily at 2 AM
+OnCalendar=daily
+OnCalendar=*-*-* 02:00:00
+
+# Run immediately if system was off during scheduled time
+Persistent=true
+
+# Randomize by up to 30 minutes to avoid thundering herd
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target

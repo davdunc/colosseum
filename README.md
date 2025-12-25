@@ -6,6 +6,41 @@ Colosseum is a multi-agent investment committee framework leveraging Langchain, 
 
 Colosseum uses Podman Quadlets for container orchestration via systemd, providing better localhost networking, simpler deployment, and native Fedora integration compared to Kubernetes.
 
+The framework includes a **PostgreSQL data lake** managed by the **CuratorAgent** (the keeper of records) for persistent storage and efficient access to market data, news, and agent decisions.
+
+## ⚡ Quick Start
+
+Get up and running in 10 minutes:
+
+```bash
+# 1. Clone repo
+git clone https://github.com/davdunc/colosseum.git
+cd colosseum
+
+# 2. Install dependencies
+python3 -m venv venv && source venv/bin/activate
+pip install -r colosseum/requirements.txt
+
+# 3. Deploy PostgreSQL data lake
+cd quadlets
+./build-postgres-image.sh  # 5-10 min, first time only
+./deploy-enhanced.sh
+
+# 4. Initialize database
+./init-schema.sh
+
+# 5. Configure
+mkdir -p ~/.config/colosseum
+cp config.yaml.example ~/.config/colosseum/config.yaml
+export DB_PASSWORD=$(podman secret inspect colosseum-db-password --showsecret)
+
+# 6. Run curator
+python -m colosseum.cli.curator health
+python -m colosseum.cli.curator start --interval 60 --tickers AAPL GOOGL MSFT
+```
+
+📖 **See [QUICKSTART.md](QUICKSTART.md) for detailed instructions**
+
 ## MCP Client/Server Integration
 
 - **MCP servers** are defined in a configuration file (e.g., `mcp.json`) and instantiated at runtime.
@@ -29,6 +64,54 @@ Colosseum uses Podman Quadlets for container orchestration via systemd, providin
 - The codebase is modular and extensible, following best practices for dependency management and plugin loading.
 - MCP client usage follows the official specification and is available to all agents.
 - Configuration files are loaded according to XDG and service conventions for compatibility.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│         SupervisorAgent (Orchestrator)           │
+└────────┬─────────────────────────────────────────┘
+         │
+    ┌────┴────────┬──────────────┬────────────┐
+    │             │              │            │
+┌───▼────┐  ┌────▼─────┐  ┌─────▼────┐  ┌───▼──────┐
+│Research│  │Portfolio │  │ Trading  │  │ Curator  │
+│ Agent  │  │  Agent   │  │  Agent   │  │ Agent ⭐ │
+└────────┘  └──────────┘  └──────────┘  └────┬─────┘
+                                              │
+                        ┌─────────────────────┴──────┐
+                        │                            │
+                  ┌─────▼──────┐            ┌────────▼────────┐
+                  │MCP Servers │            │   PostgreSQL    │
+                  │(IB, ETrade)│            │   Data Lake     │
+                  └────────────┘            └─────────────────┘
+```
+
+## Agents
+
+### CuratorAgent - The Keeper of Records
+
+The **CuratorAgent** manages the data lake, collecting and organizing market data:
+
+- **Data Ingestion**: Pulls quotes, news, and historical data from MCP servers
+- **Persistence**: Stores all data in PostgreSQL with TimescaleDB and pgvector
+- **Caching**: Maintains hot data in memory for fast access
+- **Background Worker**: Continuously collects data for watchlist tickers
+- **Query Interface**: Provides efficient data access for other agents
+
+See [docs/CURATOR_AGENT.md](docs/CURATOR_AGENT.md) for detailed documentation.
+
+## Data Lake
+
+The PostgreSQL data lake provides:
+
+- **TimescaleDB**: Efficient time-series storage for tick data
+- **pgvector**: Semantic search for news articles
+- **Three Schemas**: market_data, agent_data, metadata
+- **Quadlet Deployment**: Systemd-native container management
+- **Automatic Retention**: 90-day policy for raw tick data
+
+See [quadlets/README.md](quadlets/README.md) for deployment guide.
 
 ## Quickstart
 

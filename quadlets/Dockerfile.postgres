@@ -1,0 +1,51 @@
+# Colosseum PostgreSQL + TimescaleDB + pgvector
+# Custom image for the data lake with all necessary extensions
+
+FROM postgres:16
+
+LABEL org.opencontainers.image.title="Colosseum PostgreSQL"
+LABEL org.opencontainers.image.description="PostgreSQL 16 with TimescaleDB and pgvector for Colosseum"
+LABEL org.opencontainers.image.source="https://github.com/davdunc/colosseum"
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        postgresql-server-dev-16 \
+        libssl-dev \
+        cmake \
+        ca-certificates \
+        && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install TimescaleDB
+RUN git clone https://github.com/timescale/timescaledb /tmp/timescaledb && \
+    cd /tmp/timescaledb && \
+    git checkout 2.13.1 && \
+    ./bootstrap && \
+    cd build && make && make install && \
+    cd / && rm -rf /tmp/timescaledb
+
+# Install pgvector
+RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git /tmp/pgvector && \
+    cd /tmp/pgvector && \
+    make && \
+    make install && \
+    cd / && rm -rf /tmp/pgvector
+
+# Clean up build dependencies
+RUN apt-get purge -y --auto-remove \
+        build-essential \
+        git \
+        postgresql-server-dev-16 \
+        cmake
+
+# Add shared_preload_libraries for TimescaleDB
+RUN echo "shared_preload_libraries = 'timescaledb'" >> /usr/share/postgresql/postgresql.conf.sample
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Use default postgres entrypoint
+CMD ["postgres"]

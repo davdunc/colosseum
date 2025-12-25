@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: colosseum
+  labels:
+    app.kubernetes.io/name: colosseum
+    app.kubernetes.io/part-of: investment-committee

@@ -1,0 +1,8 @@
+[Unit]
+Description=Colosseum Curator Workers Target
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-postgres.service
+Requires=colosseum-postgres.service
+
+[Install]
+WantedBy=multi-user.target

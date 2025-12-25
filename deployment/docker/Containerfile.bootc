@@ -1,0 +1,63 @@
+# Fedora Bootable Container for Colosseum
+# Creates an immutable OS image with Colosseum pre-installed
+FROM quay.io/fedora/fedora-bootc:43
+
+LABEL org.opencontainers.image.title="Colosseum Bootable Container"
+LABEL org.opencontainers.image.description="Immutable Colosseum deployment for edge/production"
+LABEL org.opencontainers.image.source="https://github.com/davdunc/colosseum"
+
+# Install system packages
+RUN dnf install -y \
+        python3.11 \
+        python3-pip \
+        podman \
+        postgresql \
+        systemd \
+        && \
+    dnf clean all
+
+# Create colosseum user
+RUN useradd -r -s /bin/bash -m -d /opt/colosseum colosseum
+
+# Install Colosseum application
+COPY --chown=colosseum:colosseum colosseum/ /opt/colosseum/colosseum/
+COPY --chown=colosseum:colosseum quadlets/ /opt/colosseum/quadlets/
+COPY --chown=colosseum:colosseum examples/ /opt/colosseum/examples/
+
+# Install Python dependencies
+WORKDIR /opt/colosseum
+RUN python3.11 -m venv venv && \
+    source venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install -r colosseum/requirements.txt
+
+# Install quadlet files for PostgreSQL
+COPY quadlets/*.network /etc/containers/systemd/
+COPY quadlets/*.volume /etc/containers/systemd/
+COPY quadlets/*.container /etc/containers/systemd/
+
+# Install systemd services for agents
+COPY deployment/systemd/colosseum-curator.service /etc/systemd/system/
+COPY deployment/systemd/colosseum-backup.service /etc/systemd/system/
+COPY deployment/systemd/colosseum-backup.timer /etc/systemd/system/
+
+# Install backup script
+COPY deployment/systemd/install.sh /tmp/
+RUN bash -c 'source /tmp/install.sh && cat > /usr/local/bin/colosseum-backup.sh' && \
+    chmod +x /usr/local/bin/colosseum-backup.sh && \
+    rm /tmp/install.sh
+
+# Create directories
+RUN mkdir -p /etc/colosseum /var/lib/colosseum/backups /var/log/colosseum && \
+    chown -R colosseum:colosseum /opt/colosseum /var/lib/colosseum /var/log/colosseum
+
+# Enable services
+RUN systemctl enable colosseum-postgres.service && \
+    systemctl enable colosseum-curator.service && \
+    systemctl enable colosseum-backup.timer
+
+# Expose PostgreSQL port (optional - can be disabled for security)
+EXPOSE 5432
+
+# bootc containers use /sbin/init as entrypoint
+CMD ["/sbin/init"]

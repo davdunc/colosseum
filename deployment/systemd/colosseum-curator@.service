@@ -1,0 +1,51 @@
+[Unit]
+Description=Colosseum CuratorAgent Worker %i
+Documentation=https://github.com/davdunc/colosseum
+After=colosseum-postgres.service
+Requires=colosseum-postgres.service
+PartOf=colosseum-curator.target
+
+[Service]
+Type=simple
+User=colosseum
+Group=colosseum
+WorkingDirectory=/opt/colosseum
+
+# Environment
+Environment="PATH=/opt/colosseum/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="WORKER_ID=%i"
+EnvironmentFile=-/etc/colosseum/curator.env
+
+# Database password
+ExecStartPre=/bin/bash -c 'mkdir -p /run/user/%U/colosseum && podman secret inspect colosseum-db-password --showsecret > /run/user/%U/colosseum/db-password-%i'
+Environment="DB_PASSWORD_FILE=/run/user/%U/colosseum/db-password-%i"
+
+# Start curator worker instance
+ExecStart=/opt/colosseum/venv/bin/python -m colosseum.cli.curator start \
+    --interval 60 \
+    --tickers ${WATCHLIST_%i}
+
+# Cleanup
+ExecStopPost=/bin/rm -f /run/user/%U/colosseum/db-password-%i
+
+# Restart policy
+Restart=always
+RestartSec=15
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=colosseum-curator-%i
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=25%
+
+[Install]
+WantedBy=colosseum-curator.target

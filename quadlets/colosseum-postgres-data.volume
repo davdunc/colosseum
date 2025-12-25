@@ -1,0 +1,11 @@
+[Unit]
+Description=PostgreSQL data volume for Colosseum data lake
+Documentation=https://github.com/davdunc/colosseum
+
+[Volume]
+VolumeName=colosseum-postgres-data
+# Use the local driver for persistent storage
+Driver=local
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,66 @@
+# Colosseum Configuration Example
+# Copy this to ~/.config/colosseum/config.yaml or /etc/colosseum/config.yaml
+
+# Database configuration
+database:
+  # PostgreSQL connection settings
+  host: localhost
+  port: 5432
+  database: colosseum_data_lake
+  user: colosseum
+  # Password can be set via environment variable DB_PASSWORD
+  # or use connection via podman secret
+  password: ${DB_PASSWORD}
+
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+  pool_recycle: 3600
+
+  # Performance settings
+  echo: false  # Set to true for SQL query logging (debug)
+
+  # SSL/TLS settings (for production)
+  ssl_mode: prefer  # disable, allow, prefer, require, verify-ca, verify-full
+  ssl_cert: null
+  ssl_key: null
+  ssl_rootcert: null
+
+# MCP Server configuration (from mcp.json)
+mcp:
+  # Path to MCP servers configuration
+  config_path: ~/.config/colosseum/mcp.json
+
+# Agent configuration
+agents:
+  # Supervisor agent settings
+  supervisor:
+    model: gpt-4
+    temperature: 0
+    max_iterations: 10
+
+  # DataLake agent settings
+  datalake:
+    enabled: true
+    # Fetch interval for market data (seconds)
+    fetch_interval: 60
+    # Retention policy (days)
+    raw_data_retention: 90
+    # Batch size for inserts
+    batch_size: 1000
+    # Cache settings
+    cache_enabled: true
+    cache_ttl: 300  # seconds
+
+# Logging configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: null  # Set to a path for file logging, null for console only
+
+# Feature flags
+features:
+  enable_news_sentiment: true
+  enable_vector_search: true
+  enable_auto_backfill: false
