@@ -214,9 +214,10 @@ class S3ParquetSource:
         quotes = []
         for _, row in df.iterrows():
             quote = {
+            quote = {
                 'ticker': row.get('ticker') or row.get('symbol'),
-                'timestamp': pd.to_datetime(row['timestamp']),
-                'price': float(row['price']),
+                'timestamp': pd.to_datetime(row.get('timestamp')),
+                'price': float(row.get('price', 0)),
                 'volume': int(row.get('volume', 0)),
                 'bid': float(row['bid']) if pd.notna(row.get('bid')) else None,
                 'ask': float(row['ask']) if pd.notna(row.get('ask')) else None,
