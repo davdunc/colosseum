@@ -17,7 +17,8 @@ Environment="PYTHONUNBUFFERED=1"
 EnvironmentFile=-/etc/colosseum/curator.env
 
 # Database password from podman secret
-ExecStartPre=/bin/bash -c 'mkdir -p /run/user/%U/colosseum && podman secret inspect colosseum-db-password --showsecret > /run/user/%U/colosseum/db-password'
+# Database password from podman secret
+ExecStartPre=/bin/bash -c 'mkdir -p -m 700 /run/user/%U/colosseum && podman secret inspect colosseum-db-password --showsecret > /run/user/%U/colosseum/db-password && chmod 600 /run/user/%U/colosseum/db-password'
 Environment="DB_PASSWORD_FILE=/run/user/%U/colosseum/db-password"
 
 # Start curator with default watchlist
