@@ -298,12 +298,13 @@ class S3ParquetSource:
                 tickers = []
 
             article = {
-                'headline': row['headline'],
+            article = {
+                'headline': row.get('headline'),
                 'content': row.get('content'),
                 'summary': row.get('summary'),
                 'source': row.get('source', 's3_parquet'),
                 'url': row.get('url'),
-                'published_at': pd.to_datetime(row['published_at']),
+                'published_at': pd.to_datetime(row.get('published_at')),
                 'tickers': tickers,
                 'sentiment_score': float(row['sentiment_score']) if pd.notna(row.get('sentiment_score')) else None,
                 'sentiment_label': row.get('sentiment_label'),
