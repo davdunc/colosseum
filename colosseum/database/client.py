@@ -58,7 +58,8 @@ class DataLakeClient:
             password = os.environ.get(env_var, '')
 
         # Build connection URL
-        connection_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        # Build connection URL
+        connection_url = f""
 
         # Pool settings
         pool_size = self.config.get('pool_size', 10)
