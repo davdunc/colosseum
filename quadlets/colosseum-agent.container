@@ -1,0 +1,46 @@
+# Podman Quadlet Container for Colosseum Agent
+# Place this file in ~/.config/containers/systemd/ or /etc/containers/systemd/
+[Unit]
+Description=Colosseum Multi-Agent Framework
+After=colosseum-network.service colosseum-db.container.service colosseum-state.volume.service
+Requires=colosseum-network.service colosseum-state.volume.service
+Wants=colosseum-db.container.service
+
+[Container]
+# Use Fedora as base (or build custom image)
+Image=registry.fedoraproject.org/fedora:latest
+ContainerName=colosseum-agent
+Network=colosseum-network.network
+
+# Mount volumes
+Volume=colosseum-state.volume:/var/lib/colosseum:Z
+Volume=%h/.config/colosseum:/root/.config/colosseum:ro,Z
+
+# Environment variables
+Environment=DATABASE_URL=postgresql://colosseum:colosseum_dev_password@colosseum-db:5432/colosseum
+Environment=PYTHONUNBUFFERED=1
+# Add OpenAI key via systemd override or environment file
+# Environment=OPENAI_API_KEY=sk-...
+
+# Expose API port if needed
+PublishPort=127.0.0.1:8000:8000
+
+# Working directory
+WorkingDir=/opt/colosseum
+
+# Keep container running for development
+# Override with actual command in production
+Exec=/bin/bash -c "sleep infinity"
+
+# Auto-restart
+Restart=on-failure
+RestartSec=10
+
+[Service]
+Type=notify
+NotifyAccess=all
+# Load environment from file (for secrets)
+# EnvironmentFile=%h/.config/colosseum/env
+
+[Install]
+WantedBy=default.target

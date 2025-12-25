@@ -1,0 +1,41 @@
+# Podman Quadlet Container for PostgreSQL Database
+# Place this file in ~/.config/containers/systemd/ or /etc/containers/systemd/
+[Unit]
+Description=Colosseum PostgreSQL Database
+After=colosseum-network.service colosseum-db.volume.service
+Requires=colosseum-network.service colosseum-db.volume.service
+
+[Container]
+Image=docker.io/library/postgres:16-alpine
+ContainerName=colosseum-db
+Network=colosseum-network.network
+
+# Database configuration
+Environment=POSTGRES_DB=colosseum
+Environment=POSTGRES_USER=colosseum
+Environment=POSTGRES_PASSWORD=colosseum_dev_password
+# Change the password above for production!
+
+# Mount volume for persistence
+Volume=colosseum-db-data.volume:/var/lib/postgresql/data:Z
+
+# Expose port for local development access
+PublishPort=127.0.0.1:5432:5432
+
+# Health check
+HealthCmd=pg_isready -U colosseum
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+
+# Auto-restart on failure
+Restart=on-failure
+RestartSec=10
+
+[Service]
+# Run as user service (or use system-wide in /etc)
+Type=notify
+NotifyAccess=all
+
+[Install]
+WantedBy=default.target

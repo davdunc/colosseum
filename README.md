@@ -2,7 +2,9 @@
 
 ## Overview
 
-Colosseum is a multi-agent investment committee framework leveraging Langchain, Fedora Bootable Containers, and a KIND single-node Kubernetes cluster. It supports integration with MCP (Model Context Protocol) servers and clients for secure, programmatic access to data, tools, and AI agent management.
+Colosseum is a multi-agent investment committee framework leveraging Langchain, Podman Quadlets, and PostgreSQL for state management. It supports integration with MCP (Model Context Protocol) servers and clients for secure, programmatic access to data, tools, and AI agent management.
+
+Colosseum uses Podman Quadlets for container orchestration via systemd, providing better localhost networking, simpler deployment, and native Fedora integration compared to Kubernetes.
 
 The framework includes a **PostgreSQL data lake** managed by the **CuratorAgent** (the keeper of records) for persistent storage and efficient access to market data, news, and agent decisions.
 
@@ -113,166 +115,87 @@ See [quadlets/README.md](quadlets/README.md) for deployment guide.
 
 ## Quickstart
 
-### 1. Deploy the Data Lake
+### Installation
 
-```bash
-cd quadlets
-./deploy.sh
-./init-schema.sh
-```
+1. Install dependencies:
+   ```bash
+   pip install -e .
+   ```
 
-### 2. Install Dependencies
+2. Configure MCP servers:
+   ```bash
+   mkdir -p ~/.config/colosseum
+   cp examples/mcp.json ~/.config/colosseum/mcp.json
+   cp examples/config.yaml ~/.config/colosseum/config.yaml
+   # Edit configuration files with your credentials
+   ```
 
-```bash
-pip install -r colosseum/requirements.txt
-```
+3. Deploy with Quadlets (optional, for production):
+   ```bash
+   python -m colosseum.quadlet_deploy deploy
+   ```
 
-### 3. Configure MCP Servers
-
-Create `~/.config/colosseum/mcp.json`:
-```json
-{
-  "etrade": {
-    "type": "etrade",
-    "base_url": "http://localhost:8080",
-    "api_key": "your_key"
-  }
-}
-```
-
-### 4. Configure Database Connection
-
-Copy and edit the config:
-```bash
-mkdir -p ~/.config/colosseum
-cp quadlets/config.yaml.example ~/.config/colosseum/config.yaml
-export DB_PASSWORD=$(podman secret inspect colosseum-db-password --showsecret)
-```
-
-### 5. Start the Curator
-
-```bash
-# Start the curator worker
-python -m colosseum.cli.curator start --interval 60 --tickers AAPL GOOGL MSFT
-
-# Or use programmatically
-python examples/curator_example.py
-```
-
-## CLI Tools
-
-### Curator CLI
-
-```bash
-# Fetch a quote
-python -m colosseum.cli.curator fetch AAPL
-
-# Start background worker
-python -m colosseum.cli.curator start --interval 60
-
-# Manage watchlist
-python -m colosseum.cli.curator watch AAPL GOOGL MSFT
-python -m colosseum.cli.curator unwatch GOOGL
-
-# Fetch news
-python -m colosseum.cli.curator news --ticker AAPL --limit 5
-
-# Backfill historical data
-python -m colosseum.cli.curator backfill AAPL --period 1M
-
-# Show statistics
-python -m colosseum.cli.curator stats
-
-# Health check
-python -m colosseum.cli.curator health
-```
-
-## Project Structure
+### Architecture
 
 ```
-colosseum/
-├── colosseum/
-│   ├── agents/
-│   │   └── curator_agent.py        # CuratorAgent implementation
-│   ├── cli/
-│   │   └── curator.py              # Curator CLI tool
-│   ├── database/
-│   │   ├── client.py               # DataLakeClient (SQLAlchemy)
-│   │   └── __init__.py
-│   ├── mcp/
-│   │   ├── base.py                 # MCP server base classes
-│   │   ├── ib.py                   # Interactive Brokers
-│   │   ├── etrade.py               # E*TRADE
-│   │   ├── dastrader.py            # DAS Trader
-│   │   ├── fetch.py                # Generic fetch server
-│   │   └── loader.py               # MCP server loader
-│   ├── agent_supervisor.py         # SupervisorAgent
-│   ├── agent_registry.py           # Agent registry
-│   ├── config.py                   # Configuration management
-│   └── requirements.txt
-├── quadlets/
-│   ├── colosseum-network.network   # Podman network
-│   ├── colosseum-postgres.container # PostgreSQL container
-│   ├── colosseum-postgres-data.volume # Data volume
-│   ├── deploy.sh                   # Deployment script
-│   ├── cleanup.sh                  # Cleanup script
-│   ├── init-schema.sh              # Schema initialization
-│   ├── init-db.sql                 # Database schema
-│   ├── config.yaml.example         # Configuration template
-│   └── README.md                   # Deployment guide
-├── deployment/
-│   ├── systemd/                    # Systemd service files
-│   ├── kubernetes/                 # Kubernetes manifests
-│   ├── docker/                     # Container images
-│   └── README.md                   # Deployment overview
-├── examples/
-│   └── curator_example.py          # Example usage
-├── docs/
-│   ├── CURATOR_AGENT.md            # Curator documentation
-│   └── DEPLOYMENT.md               # Deployment guide
-└── README.md
+┌─────────────────────────────────────────┐
+│  Colosseum Multi-Agent Framework        │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌──────────────┐  ┌─────────────────┐ │
+│  │  PostgreSQL  │  │  Agent Services │ │
+│  │   Database   │←─┤  - Supervisor   │ │
+│  │  (State)     │  │  - Plugins      │ │
+│  └──────────────┘  │  - MCP Clients  │ │
+│                    └─────────────────┘ │
+│                                         │
+│  Podman Quadlets + systemd              │
+└─────────────────────────────────────────┘
+         ↓
+    localhost:5432 (Database)
+    localhost:8000 (API)
+```
+
+### Development Mode
+
+For development without Quadlets:
+```python
+from colosseum import SupervisorAgent, load_config
+
+# Load configuration
+config = load_config()
+
+# Create supervisor agent
+agent = SupervisorAgent()
+
+# Database will use SQLite by default in ~/.local/share/colosseum/state.db
 ```
 
 ## Deployment
 
-Colosseum supports multiple deployment strategies:
+See [quadlets/README.md](quadlets/README.md) for detailed deployment instructions using Podman Quadlets.
 
-- **Local Development**: Direct Python execution for testing
-- **Systemd/Quadlet**: Production deployment on Fedora/RHEL ⭐ **Recommended**
-- **Kubernetes**: Containerized deployment for multi-node clusters
-- **Fedora Bootable Container**: Immutable infrastructure for edge
+### Why Quadlets instead of KIND?
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for comprehensive deployment guide.
+- **Better localhost access**: No networking issues accessing host services
+- **Simpler setup**: No Kubernetes complexity
+- **Native systemd**: Better integration with Fedora
+- **Easier debugging**: Direct podman commands work
+- **Persistent state**: Built-in volume management
+- **Service discovery**: DNS works out of the box
 
-### Quick Deploy (Systemd)
+## Database State Management
 
-```bash
-# Install as system service
-cd deployment/systemd
-sudo ./install.sh
+Colosseum uses PostgreSQL (production) or SQLite (development) for:
+- Agent state persistence
+- Conversation history
+- MCP server cache
+- Multi-agent coordination
 
-# Enable and start
-sudo systemctl enable --now colosseum-curator.service
-```
-
-### Quick Deploy (Kubernetes)
-
-```bash
-# Build and deploy
-cd deployment/docker && ./build.sh
-cd ../kubernetes && ./deploy.sh
-```
-
-## Documentation
-
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Comprehensive deployment strategies
-- **[CuratorAgent Documentation](docs/CURATOR_AGENT.md)** - Data lake agent details
-- **[Quadlets Guide](quadlets/README.md)** - PostgreSQL deployment
+See [colosseum/database.py](colosseum/database.py) for the state management API.
 
 ## References
 
 - [Model Context Protocol (MCP) Client Quickstart](https://modelcontextprotocol.io/quickstart/client)
 - [Langchain Documentation](https://python.langchain.com/)
-- [Major Hayden's Quadlet Networking Blog](https://major.io/p/quadlet-networking/)
-- [TimescaleDB Documentation](https://docs.timescale.com/)
-- [pgvector Documentation](https://github.com/pgvector/pgvector)
+- [Podman Quadlet Documentation](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html)

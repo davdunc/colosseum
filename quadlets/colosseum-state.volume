@@ -1,0 +1,7 @@
+# Podman Quadlet Volume for agent state and configuration
+# Place this file in ~/.config/containers/systemd/ or /etc/containers/systemd/
+[Volume]
+VolumeName=colosseum-state
+
+[Install]
+WantedBy=default.target
